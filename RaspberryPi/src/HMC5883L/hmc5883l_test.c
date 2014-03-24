@@ -83,8 +83,6 @@ int main(int argc, char *argv[])
 	wiringPiI2CWriteReg8(accel,0x01,0xA0);
 	//Continuous Measurement
 	wiringPiI2CWriteReg8(accel,0x02,0x00);
-	//disable sample rate division
-	wiringPiI2CWriteReg8(accel,0x19,0x00);
 
 	//Open the file log
 	mpu_log_ptr=fopen("mpu6050.log","wt");
