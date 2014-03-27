@@ -765,11 +765,12 @@ main(int argc, char **argv)
     if (argc == 2 && !strcmp(argv[1], "--pcm"))
         setup(PULSE_WIDTH_INCREMENT_GRANULARITY_US_DEFAULT, DELAY_VIA_PCM);
     else
-        setup(PULSE_WIDTH_INCREMENT_GRANULARITY_US_DEFAULT, DELAY_VIA_PWM);
+        //setup(PULSE_WIDTH_INCREMENT_GRANULARITY_US_DEFAULT, DELAY_VIA_PWM);
+	setup(1,DELAY_VIA_PWM);
 
     // Setup demo parameters
     int demo_timeout = 10 * 1000000;
-    int gpio = 17;
+    int gpio[]= {25,23,24};
     int channel = 0;
     int subcycle_time_us = SUBCYCLE_TIME_US_DEFAULT; //10ms;
 
@@ -778,16 +779,15 @@ main(int argc, char **argv)
     print_channel(channel);
 
     // Use the channel for various pulse widths
-    add_channel_pulse(channel, gpio, 0, 50);
-    add_channel_pulse(channel, gpio, 100, 50);
-    add_channel_pulse(channel, gpio, 200, 50);
-    add_channel_pulse(channel, gpio, 300, 50);
+    add_channel_pulse(channel, gpio[0], 0, 1999);
+    add_channel_pulse(channel, gpio[1], 0, 2000);
+    add_channel_pulse(channel, gpio[2], 0, 3*1980);
     usleep(demo_timeout);
 
     // Clear and start again
-    clear_channel_gpio(0, 17);
-    add_channel_pulse(channel, gpio, 0, 50);
-    usleep(demo_timeout);
+    //clear_channel_gpio(0, gpio);
+    //add_channel_pulse(channel, gpio, 0, 50);
+    //usleep(demo_timeout);
 
     // All done
     shutdown();
