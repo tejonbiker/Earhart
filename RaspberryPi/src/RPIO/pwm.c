@@ -761,6 +761,9 @@ get_channel_subcycle_time_us(int channel)
 int
 main(int argc, char **argv)
 {
+
+    int i=0;
+
     // Very crude...
     if (argc == 2 && !strcmp(argv[1], "--pcm"))
         setup(PULSE_WIDTH_INCREMENT_GRANULARITY_US_DEFAULT, DELAY_VIA_PCM);
@@ -779,10 +782,31 @@ main(int argc, char **argv)
     print_channel(channel);
 
     // Use the channel for various pulse widths
-    add_channel_pulse(channel, gpio[0], 0, 1999);
-    add_channel_pulse(channel, gpio[1], 0, 2000);
-    add_channel_pulse(channel, gpio[2], 0, 3*1980);
-    usleep(demo_timeout);
+    add_channel_pulse(channel, gpio[0], 0, 1000);
+    //add_channel_pulse(channel, gpio[1], 0, 2000);
+    //add_channel_pulse(channel, gpio[2], 0, 3*1980);
+    //usleep(demo_timeout);
+
+	
+    	for(i=0;i<1000;i++)
+    	{
+		add_channel_pulse(channel, gpio[0], 0, 1000+i);
+		usleep(30000);
+	}
+
+	/*
+	add_channel_pulse(channel, gpio[0], 0, 1000);
+	usleep(3000000);
+
+	add_channel_pulse(channel, gpio[0], 0, 1500);
+	usleep(3000000);
+
+	add_channel_pulse(channel, gpio[0], 0, 1800);
+	usleep(3000000);
+
+	add_channel_pulse(channel, gpio[0], 0, 1400);
+	usleep(3000000);
+	*/
 
     // Clear and start again
     //clear_channel_gpio(0, gpio);
