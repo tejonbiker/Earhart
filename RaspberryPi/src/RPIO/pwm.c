@@ -774,25 +774,47 @@ main(int argc, char **argv)
     // Setup demo parameters
     int demo_timeout = 10 * 1000000;
     int gpio[]= {25,23,24};
+    int esc[]={27,22,4,25,23,24,17};
     int channel = 0;
     int subcycle_time_us = SUBCYCLE_TIME_US_DEFAULT; //10ms;
+	int j;
 
     // Setup channel
     init_channel(channel, subcycle_time_us);
     print_channel(channel);
 
     // Use the channel for various pulse widths
-    add_channel_pulse(channel, gpio[0], 0, 1000);
+    //add_channel_pulse(channel, gpio[0], 0, 1000);
     //add_channel_pulse(channel, gpio[1], 0, 2000);
     //add_channel_pulse(channel, gpio[2], 0, 3*1980);
     //usleep(demo_timeout);
 
-	
+    //add_channel_pulse(channel, esc[6], 0, 10*1000);
+
+	/*
     	for(i=0;i<1000;i++)
     	{
-		add_channel_pulse(channel, gpio[0], 0, 1000+i);
+
+		for(j=0;j<6;j++)
+		{
+			add_channel_pulse(channel, esc[j], 0, 1000+i);
+			
+		}
 		usleep(30000);
+	}*/
+
+	for(i=0;i<6;i++)
+	{
+		add_channel_pulse(channel, esc[i], 0, 1000);
+		usleep(2000000);
+		add_channel_pulse(channel, esc[i], 0, 1100);
+		usleep(5000000);
+		add_channel_pulse(channel, esc[i], 0, 1000);
 	}
+
+	add_channel_pulse(channel, esc[i], 0, 3000);
+	usleep(5000000);
+	
 
 	/*
 	add_channel_pulse(channel, gpio[0], 0, 1000);
