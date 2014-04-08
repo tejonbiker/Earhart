@@ -56,13 +56,19 @@ int IMUBInit()	//Open the I2C Channel and verify the sensors
 
 	ioctl(i2c_port,I2C_SLAVE,MPU_SLAVE_ADDR);
 	buffer[0]=0x1A;  //Register
-	buffer[1]=0x00;  //Value
-	write(i2c_port,buffer,2); //Write to i2C, Disable FSYNC and DLPF
+	buffer[1]=0x01;  //Value
+	write(i2c_port,buffer,2); //Write to i2C, Disable FSYNC and  enable DLPF at 1 level
 
 	ioctl(i2c_port,I2C_SLAVE,MPU_SLAVE_ADDR);
 	buffer[0]=0x19;  //Register
+	buffer[1]=0x01;  //Value
+	write(i2c_port,buffer,2); //Write to i2C, Sample Rate division
+
+	ioctl(i2c_port,I2C_SLAVE,MPU_SLAVE_ADDR);
+	buffer[0]=0x1C;  //Register
 	buffer[1]=0x00;  //Value
-	write(i2c_port,buffer,2); //Write to i2C, Sample Rate divition
+	write(i2c_port,buffer,2); //Write to i2C, Accelerometer scale 2G
+
 
 	//let's continue with HMC5883L
 	ioctl(i2c_port,I2C_SLAVE,HMC_SLAVE_ADDR);
@@ -89,12 +95,20 @@ int IMUBSampleRate(int sample_rate) //Setup the sample rate
 {
 
 }
+
 int IMUBPollRaw(float *data_dest) //Use  Poll method to sample the raw data
 {
+
+	static char ptr_buffer_before[14];
+	static int firstRead=1;
+	int different=1;
+	int j;
+
 	unsigned char ptr_buffer_current[256], *buffer_read;
 	int i;
 	int result,low,high;
 	unsigned char ptr_buffer_mpu[256];
+	int total_read=0;
 
 	if(data_dest==NULL)
 		return -1;
@@ -116,14 +130,54 @@ int IMUBPollRaw(float *data_dest) //Use  Poll method to sample the raw data
 	ioctl(i2c_port,I2C_SLAVE,MPU_SLAVE_ADDR);
 	ptr_buffer_current[0]=0x3B;                  //init register of the data
 	result=write(i2c_port,ptr_buffer_current,1);
-	result=read(i2c_port,ptr_buffer_mpu,14);
+	result=read(i2c_port,ptr_buffer_mpu,14); 
 
-	for(i=0;i<7;i++)
+	/*
+	do{
+		ioctl(i2c_port,I2C_SLAVE,MPU_SLAVE_ADDR);
+		ptr_buffer_current[0]=0x3B;                  //init register of the data
+		result=write(i2c_port,ptr_buffer_current,1);
+		result=read(i2c_port,ptr_buffer_mpu,14); 
+
+		total_read++;
+
+		if(firstRead==1)
+		{
+			different=1;
+			firstRead=0;
+			memcpy(ptr_buffer_before,ptr_buffer_mpu,14);
+			//printf("first read\n");
+		}else{
+			if(memcmp(ptr_buffer_mpu,ptr_buffer_before,14)==0)
+			{
+				//different=0;
+				//printf("Equal Sample\n");
+			}
+			else
+			{
+				different=1;
+				memcpy(ptr_buffer_before,ptr_buffer_mpu,14);
+			}
+		}
+	}while(different!=1);
+	*/
+
+	//printf("total Read: %i \n",total_read++);
+
+	for(i=0;i<3;i++)
 	{
 		low=ptr_buffer_mpu[i*2+1];
 		high=ptr_buffer_mpu[i*2];
 		data_dest[i+3]=((short)(((unsigned char)low) + ((unsigned char)(high))*256))*2/32767.0f;
 	}
+
+	for(i=4;i<7;i++)
+	{
+		low=ptr_buffer_mpu[i*2+1];
+		high=ptr_buffer_mpu[i*2];
+		data_dest[i+3]=((short)(((unsigned char)low) + ((unsigned char)(high))*256))*250/32767.0f;
+	}
+
 }
 
 int IMUBPOllAngles(float *yaw, float *pitch, float *roll) //Use poll method to sample the processed angles

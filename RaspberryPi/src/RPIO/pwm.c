@@ -455,7 +455,7 @@ add_channel_pulse(int channel, int gpio, int width_start, int width)
     dma_cb_t *cbp = (dma_cb_t *) get_cb(channel) + (width_start * 2);
     uint32_t *dp = (uint32_t *) channels[channel].virtbase;
 
-    log_debug("add_channel_pulse: channel=%d, gpio=%d, start=%d, width=%d\n", channel, gpio, width_start, width);
+    //log_debug("add_channel_pulse: channel=%d, gpio=%d, start=%d, width=%d\n", channel, gpio, width_start, width);
     if (!channels[channel].virtbase)
         return fatal("Error: channel %d has not been initialized with 'init_channel(..)'\n", channel);
     if (width_start + width > channels[channel].width_max || width_start < 0)
@@ -774,10 +774,10 @@ main(int argc, char **argv)
     // Setup demo parameters
     int demo_timeout = 10 * 1000000;
     int gpio[]= {25,23,24};
-    int esc[]={27,22,4,25,23,24,17};
+    int esc[]={24,23,4,27,25,22,17}; 			//1-2-3-4-5-6-Abajo
     int channel = 0;
     int subcycle_time_us = SUBCYCLE_TIME_US_DEFAULT; //10ms;
-	int j;
+	int j; //Variable
 
     // Setup channel
     init_channel(channel, subcycle_time_us);

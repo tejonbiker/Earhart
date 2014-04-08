@@ -455,7 +455,7 @@ add_channel_pulse(int channel, int gpio, int width_start, int width)
     dma_cb_t *cbp = (dma_cb_t *) get_cb(channel) + (width_start * 2);
     uint32_t *dp = (uint32_t *) channels[channel].virtbase;
 
-    log_debug("add_channel_pulse: channel=%d, gpio=%d, start=%d, width=%d\n", channel, gpio, width_start, width);
+    //log_debug("add_channel_pulse: channel=%d, gpio=%d, start=%d, width=%d\n", channel, gpio, width_start, width);
     if (!channels[channel].virtbase)
         return fatal("Error: channel %d has not been initialized with 'init_channel(..)'\n", channel);
     if (width_start + width > channels[channel].width_max || width_start < 0)

@@ -20,6 +20,7 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <stdio.h>
+#include <string.h>
 
 int IMUBInit();	//Open the I2C Channel and verify the sensors
 int IMUBSampleRate(int sample_rate); //Setup the sample rate
