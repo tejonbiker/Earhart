@@ -91,6 +91,16 @@ int IMUBInit()	//Open the I2C Channel and verify the sensors
 	
 }
 
+int IMUB_DLPF(int level)
+{
+	unsigned char buffer[2];
+
+	ioctl(i2c_port,I2C_SLAVE,MPU_SLAVE_ADDR);
+	buffer[0]=0x1A;  //Register
+	buffer[1]=level | 7 ;  //Value
+	write(i2c_port,buffer,2); //Write to i2C, Disable FSYNC and  enable DLPF at 1 level
+}
+
 int IMUBSampleRate(int sample_rate) //Setup the sample rate
 {
 

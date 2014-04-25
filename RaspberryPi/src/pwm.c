@@ -305,9 +305,18 @@ shutdown(void)
 static void
 terminate(void)
 {
+    int esc[]={24,23,4,27,25,22,17};
+    int i;
+
+    for(i=0;i<7;i++)
+	add_channel_pulse(0, esc[i], 0, 1000);
+
+    usleep(5000000);
+
     shutdown();
     exit(EXIT_SUCCESS);
 }
+
 
 // Shutdown with an error message. Returns EXIT_FAILURE for convenience.
 // if soft_fatal is set to 1, a call to `fatal(..)` will not shut down
@@ -479,7 +488,6 @@ add_channel_pulse(int channel, int gpio, int width_start, int width)
     cbp->dst = phys_gpclr0;
     return EXIT_SUCCESS;
 }
-
 
 
 // Get a channel's pagemap
