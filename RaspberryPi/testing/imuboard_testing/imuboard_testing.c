@@ -1,6 +1,7 @@
 #include "imuboard.h"
 #include "math.h"
 #include "pwm.h"
+#include "stdlib.h"
 
 float raw[24];
 float raw_before[24];
@@ -19,9 +20,10 @@ int omega[6];
 float WBase=1100;
 float WBase_1=1100;
 
+
 #define MOTORS
 
-int esc[]={24,23,4,27,25,22,17};
+int esc[]={24,17,4,27,25,22,23};
 
 int channel=0;
 
@@ -33,10 +35,14 @@ int main(void)
 
 	FILE *log=NULL;
 	int i,j;
-	IMUBInit();
+	if(IMUBInit()<0){
+		printf("Error with IMU appear\n");
+		exit(0);
+	}
         IMUB_DLPF(6);
+	IMUBAccelScale(16);
 
-	log=fopen("log_dron_hex_y_less1.txt","w");
+	log=fopen("log_accel_damping_rug_16g.txt","w");
 	
 	#ifdef MOTORS
 	//Setup PWM
@@ -114,8 +120,9 @@ int main(void)
 		omega[5]= -errors[0]*Kyaw    +   errors[1]*Kpitch    - errors[2]*Kroll    + WBase;
 
 
-		fprintf(log,"%f, %f, %f",errors[0],errors[1],errors[2]);
-		
+		//fprintf(log,"%f, %f, %f",errors[0],errors[1],errors[2]);
+		fprintf(log,"%f, %f, %f",raw[3],raw[4],raw[5]);
+
 		#ifdef MOTORS
 		for(i=0;i<6;i++)
 		{
