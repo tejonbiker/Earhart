@@ -25,6 +25,7 @@
 int IMUBInit();	//Open the I2C Channel and verify the sensors
 int IMUBSampleRate(int sample_rate); //Setup the sample rate
 int IMUB_DLPF(int level);
+int IMUBAccelScale(int g_scale);
 int IMUBPollRaw(float *data_dest); //Use  Poll method to sample the raw data
 int IMUBPOllAngles(float *yaw, float *pitch, float *roll); //Use poll method to sample the processed angles
 int IMUBClose(); //close all resources

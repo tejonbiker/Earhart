@@ -774,7 +774,7 @@ main(int argc, char **argv)
     // Setup demo parameters
     int demo_timeout = 10 * 1000000;
     int gpio[]= {25,23,24};
-    int esc[]={24,23,4,27,25,22,17}; 			//1-2-3-4-5-6-Abajo
+    int esc[]={24,17,4,27,25,22,23}; 			//1-2-3-4-5-6-Abajo
     int channel = 0;
     int subcycle_time_us = SUBCYCLE_TIME_US_DEFAULT; //10ms;
 	int j; //Variable
@@ -803,6 +803,8 @@ main(int argc, char **argv)
 		usleep(30000);
 	}*/
 
+	while(1){
+
 	for(i=0;i<6;i++)
 	{
 		add_channel_pulse(channel, esc[i], 0, 1000);
@@ -810,6 +812,7 @@ main(int argc, char **argv)
 		add_channel_pulse(channel, esc[i], 0, 1100);
 		usleep(5000000);
 		add_channel_pulse(channel, esc[i], 0, 1000);
+	}
 	}
 
 	add_channel_pulse(channel, esc[i], 0, 3000);

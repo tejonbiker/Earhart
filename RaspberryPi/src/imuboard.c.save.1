@@ -221,36 +221,39 @@ int IMUBPollRaw(float *data_dest) //Use  Poll method to sample the raw data
 
 int IMUBAccelScale(int g_scale)
 {
-	unsigned char byte_out[2];
+	unsigned char byte_out;
 	unsigned char accel_config_add=0x1C;
 	int result;
-	unsigned char code;
+
+	accel_scale=g_scale;
 
 
 	//Checks ACCEL_CONFIG (0x1C register for more info)
 	switch(g_scale)
 	{
 		case 2:
-			byte_out[1]=0x00;
+			byte_out=0x00;
 			break;
 		case 4:
-			byte_out[1]=0x08;
+			byte_out=0x08;
 			break;
 		case 8:
-			byte_out[1]=0x10;
+			byte_out=0x10;
 			break;
 		case 16:
-			byte_out[1]=0x18;
+			byte_out=0x18;
 			break;
 		default:
+			byte_out=0x00;
+		 	accel_scale=2;
 		 	printf("Unknown scale\n");
-			return -1;
+
 	}
 
 	accel_scale=g_scale;
 	ioctl(i2c_port,I2C_SLAVE,MPU_SLAVE_ADDR);
-	byte_out[0]=0x1C; //G Scale register address
-	result=write(i2c_port,byte_out,2);
+	result=write(i2c_port,&accel_config_add,1);
+	result=write(i2c_port,&byte_out,1);
 	return 0;
 }
 

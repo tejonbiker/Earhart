@@ -20,6 +20,8 @@ int omega[6];
 float WBase=1100;
 float WBase_1=1100;
 
+int max_power;
+int time;
 
 #define MOTORS
 
@@ -34,7 +36,12 @@ int main(int argc, char **argv)
 {
 
 	FILE *log=NULL;
-	int i,j;
+	int end_profiler=0;
+	int i,j,motor_loop;
+	int time_steps;
+	int current_motor=0;
+	int sleep_steps=3*2;
+
 	if(IMUBInit()<0){
 		printf("Error with IMU appear\n");
 		exit(0);
@@ -44,18 +51,21 @@ int main(int argc, char **argv)
 
 	if(argc>=2)
 	{
-		log=fopen(argv[1],"w");
-		if(log==NULL)
-		{
-			printf("Error to open user file: %s\n",argv[1]);
-			return -1;
-		}
+		max_power=atoi(argv[1]);
+		time = atoi(argv[2]);
 	}
 	else
 	{
-		printf("Using default name: IMU_log.txt\n");
-		log=fopen("IMU_log.txt","w");
+		max_power=200;
+		time=20;
+		
+		
 	}
+
+	printf("Parameters: max_power=%i, time=%i\n",max_power,time);
+
+	time_steps=time*2;
+	log=fopen("IMU_log_profiler.txt","w");
 	
 	#ifdef MOTORS
 	//Setup PWM
@@ -69,7 +79,7 @@ int main(int argc, char **argv)
 	usleep(5000000);
 
 
-	while(1)
+	while(!end_profiler)
 	{
 		IMUBPollRaw(raw);
 		if(memcmp(raw,raw_before,sizeof(float)*10)!=0)
@@ -78,51 +88,43 @@ int main(int argc, char **argv)
 		}else
 		{continue;}
 
-		/*
-		discard_values--;
-		if(discard_values!=0)
-			continue;
-		*/
 
 		total_counter++;
 
 		if(total_counter==250)
 		{
 			total_counter=0;
-			printf("y,p,r: %f,%f,%f\n",yaw,pitch,roll);
 
-			for(i=0;i<6;i++)
-				printf("%f ",omega[i]);
-
-			printf("MP: %f",max_pitch);
-			printf("\n");
 			fflush(log);
-
 
 			mid_seconds++;
 
-			if(mid_seconds>0 && mid_seconds<=40)
+			if(mid_seconds>0 && mid_seconds<=time_steps)
 			{
-				WBase = WBase_1 + 300*(mid_seconds/40.0f) ;
+				WBase = WBase_1 + max_power*(mid_seconds/((float)time_steps)) ;
 			}
-			else if(mid_seconds>40)
+			else if(mid_seconds>time_steps && mid_seconds<=time_steps+sleep_steps)
 			{
-				WBase=1300;
+				WBase=max_power+WBase_1;
+			}
+			else if(mid_seconds>time_steps+sleep_steps)
+			{
+				add_channel_pulse(channel, esc[current_motor], 0, 1000);
+				
+				current_motor++;
+
+				if(current_motor>=6)
+				{
+					end_profiler=1;
+					continue;
+				}
+
+				mid_seconds=0;
+				usleep(3000000);
 			}
 
-			printf(" Power: %f ",WBase);
+			printf(" Power: %f \n",WBase);
 		}
-
-		yaw+=raw[9]/512.0f;
-		pitch =(180.0/M_PI)*atan(   raw[3]/sqrt(raw[4]*raw[4] + raw[5]*raw[5])    );
-		roll = (180.0/M_PI)*atan(   raw[4]/sqrt(raw[3]*raw[3] + raw[5]*raw[5])    );
-	
-		if(fabs(pitch)>max_pitch)
-			max_pitch=fabs(pitch);	
-
-		errors[0]=targets[0]-yaw;
-		errors[1]=(targets[1]-pitch);
-		errors[2]=-(targets[2]-roll);
 
 			  //Yaw segment           Pitch		    Roll
 		omega[0]=  errors[0]*Kyaw    +   errors[1]*Kpitch                         + WBase;
@@ -133,16 +135,10 @@ int main(int argc, char **argv)
 		omega[5]= -errors[0]*Kyaw    +   errors[1]*Kpitch    - errors[2]*Kroll    + WBase;
 
 
-		//fprintf(log,"%f, %f, %f",errors[0],errors[1],errors[2]);
 		fprintf(log,"%f, %f, %f",raw[3],raw[4],raw[5]);
 
 		#ifdef MOTORS
-		for(i=0;i<6;i++)
-		{
-			//fprintf(log,"%i, ",omega[i]);
-			add_channel_pulse(channel, esc[i], 0, omega[i]);
-			//add_channel_pulse(channel, esc[i], 0, 1200);
-		}		
+		add_channel_pulse(channel, esc[current_motor], 0, WBase);
 		#endif	
 
 		fprintf(log,"\n");
@@ -150,6 +146,9 @@ int main(int argc, char **argv)
 	}
 	
 	printf("Total counter: %i\n", total_counter);
+	
+	shutdown();
+        exit(0);
 
 	return 0;
 }

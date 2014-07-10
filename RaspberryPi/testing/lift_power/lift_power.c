@@ -16,7 +16,7 @@ float errors[3];
 float omega[6];
 float WBase=1150;
 
-int esc[]={24,23,4,27,25,22,17};
+int esc[]={24,17,4,27,25,22,23};
 
 int channel=0;
 
@@ -38,7 +38,7 @@ int main(void)
 	
 	usleep(5000000);
 
-	for(i=0;i<600;i++)
+	for(i=0;i<350;i++)
 	{
 		for(j=0;j<6;j++)
 			add_channel_pulse(channel, esc[j], 0, 1000+i);
@@ -46,6 +46,8 @@ int main(void)
 		printf("%i\n",1000+i);
 		usleep(50000);
 	}
+
+	usleep(5000000);
 
 	shutdown();	
 	return 0;
