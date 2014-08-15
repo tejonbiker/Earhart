@@ -286,7 +286,7 @@ udelay(int us)
 
 // Shutdown -- its important to reset the DMA before quitting
 void
-shutdown(void)
+pwm_shutdown(void)
 {
     int i;
 

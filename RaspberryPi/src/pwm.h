@@ -23,7 +23,7 @@
  *     http://pythonhosted.org/RPIO
  */
 int setup(int pw_incr_us, int hw);
-void shutdown(void);
+void pwm_shutdown(void);
 void set_loglevel(int level);
 
 int init_channel(int channel, int subcycle_time_us);

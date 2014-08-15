@@ -13,14 +13,83 @@
 #include<arpa/inet.h> //inet_addr
 #include<unistd.h>    //write
 #include<pthread.h> //for threading , link with lpthread
+
+#include "imuboard.h"
+#include "math.h"
+#include "pwm.h"
+#include "stdlib.h"
+
  
 //the thread function
 void *connection_handler(void *);
+void *control_handler(void *);
+
+float raw[24];
+float raw_before[24];
+int counter=0;
+int total_counter=0;
+float yaw,pitch,roll;
+int discard_values=1000;
+
+//Yaw,Pitch and Roll
+float targets[3]={0,0,0};
+//Kpitch=3,Kroll=7, Kyaw=7
+//Kpitch=1,Kroll=1,Kyaw=0.0;
+float Kpitch=0.0,Kroll=0.0,Kyaw=0.0; 
+float errors[3];
+int omega[6];
+float WBase=1100;
+float WBase_1=1100;
+
+
  
 int main(int argc , char *argv[])
 {
     int socket_desc , client_sock , c;
     struct sockaddr_in server , client;
+    pthread_t control_thread_id;
+    FILE *log=NULL;
+    int i,j;
+
+    if(IMUBInit()<0){
+	printf("Error with IMU appear\n");
+	exit(0);
+    }
+	IMUB_DLPF(6);
+	IMUBAccelScale(16);
+
+	if(argc>=2)
+	{
+		log=fopen(argv[1],"w");
+		if(log==NULL)
+		{
+			printf("Error to open user file: %s\n",argv[1]);
+			return -1;
+		}
+	}
+	else
+	{
+		printf("Using default name: IMU_log.txt\n");
+		log=fopen("IMU_log.txt","w");
+	}
+	
+	#ifdef MOTORS
+	//Setup PWM
+	setup(1,DELAY_VIA_PWM);
+	init_channel(channel, SUBCYCLE_TIME_US_DEFAULT);
+	
+	for(i=0;i<6;i++)
+		add_channel_pulse(channel, esc[i], 0, 1000);	
+	#endif
+
+	usleep(5000000);
+
+
+    	if( pthread_create( &control_thread_id , NULL ,  control_handler , (void*)NULL) < 0)
+    	{
+       		perror("could not create control thread");
+       		return 1;
+    	}
      
     //Create socket
     socket_desc = socket(AF_INET , SOCK_STREAM , 0);
@@ -122,4 +191,84 @@ void *connection_handler(void *socket_desc)
     }
          
     return 0;
-} 
+}
+
+/*
+	This will handle the control loop
+*/ 
+
+void *control_handler(void *socket_desc)
+{
+
+	
+
+	int i,mid_seconds;
+	
+    	while(1)
+	{
+		IMUBPollRaw(raw);
+		if(memcmp(raw,raw_before,sizeof(float)*10)!=0)
+		{
+			memcpy(raw_before,raw,sizeof(float)*10);
+		}else
+		{continue;}
+
+		/*
+		discard_values--;
+		if(discard_values!=0)
+			continue;
+		*/
+
+		total_counter++;
+
+		if(total_counter==250)
+		{
+			total_counter=0;
+			
+			for(i=0;i<6;i++)
+				printf("%f ",omega[i]);
+
+			fflush(log);
+
+
+			mid_seconds++;
+
+			if(mid_seconds>0 && mid_seconds<=40)
+			{
+				WBase = WBase_1 + 300*(mid_seconds/40.0f) ;
+			}
+			else if(mid_seconds>40)
+			{
+				WBase=1300;
+			}
+
+			printf(" Power: %f ",WBase);
+		}
+
+			  //Yaw segment           Pitch		    Roll
+		omega[0]=  errors[0]*Kyaw    +   errors[1]*Kpitch                         + WBase;
+		omega[1]=  -errors[0]*Kyaw   +   errors[1]*Kpitch    + errors[2]*Kroll    + WBase;
+		omega[2]=  errors[0]*Kyaw    -   errors[1]*Kpitch    + errors[2]*Kroll    + WBase;
+		omega[3]= -errors[0]*Kyaw    -   errors[1]*Kpitch    			  + WBase;
+		omega[4]=  errors[0]*Kyaw    -   errors[1]*Kpitch    - errors[2]*Kroll 	  + WBase;
+		omega[5]= -errors[0]*Kyaw    +   errors[1]*Kpitch    - errors[2]*Kroll    + WBase;
+
+
+		fprintf(log,"%f, %f, %f",raw[3],raw[4],raw[5]);
+
+		#ifdef MOTORS
+		for(i=0;i<6;i++)
+		{
+			//fprintf(log,"%i, ",omega[i]);
+			add_channel_pulse(channel, esc[i], 0, omega[i]);
+			//add_channel_pulse(channel, esc[i], 0, 1200);
+		}		
+		#endif	
+
+		fprintf(log,"\n");
+		
+	}
+
+         
+    return 0;
+}
