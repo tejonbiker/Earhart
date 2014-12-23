@@ -805,6 +805,7 @@ main(int argc, char **argv)
 
 	while(1){
 
+        /*
 	for(i=0;i<6;i++)
 	{
 		add_channel_pulse(channel, esc[i], 0, 1000);
@@ -813,6 +814,17 @@ main(int argc, char **argv)
 		usleep(5000000);
 		add_channel_pulse(channel, esc[i], 0, 1000);
 	}
+        */
+
+		add_channel_pulse(channel, 18, 0, 1000);
+                usleep(5000000);
+		add_channel_pulse(channel, 18, 0, 3300);
+                usleep(5000000);
+                add_channel_pulse(channel, 18, 0, 1000);
+		//usleep(2000000);
+                //add_channel_pulse(channel, 18, 0, 1500);
+		//usleep(2000000);
+
 	}
 
 	add_channel_pulse(channel, esc[i], 0, 3000);

@@ -39,7 +39,8 @@ int main(int argc, char **argv)
 		printf("Error with IMU appear\n");
 		exit(0);
 	}
-        IMUB_DLPF(6);
+	IMUBSampleRate(1);
+        IMUB_DLPF(1);
 	IMUBAccelScale(16);
 
 	if(argc>=2)
@@ -72,11 +73,13 @@ int main(int argc, char **argv)
 	while(1)
 	{
 		IMUBPollRaw(raw);
+		/*
 		if(memcmp(raw,raw_before,sizeof(float)*10)!=0)
 		{
 			memcpy(raw_before,raw,sizeof(float)*10);
 		}else
 		{continue;}
+		*/
 
 		/*
 		discard_values--;
@@ -94,18 +97,19 @@ int main(int argc, char **argv)
 			for(i=0;i<6;i++)
 				printf("%f ",omega[i]);
 
-			printf("MP: %f",max_pitch);
+			printf("MP: %f,",max_pitch);
+			printf("mid_seconds: %i",mid_seconds);
 			printf("\n");
 			fflush(log);
 
 
 			mid_seconds++;
 
-			if(mid_seconds>0 && mid_seconds<=40)
+			if(mid_seconds>0 && mid_seconds<=28)
 			{
 				WBase = WBase_1 + 300*(mid_seconds/40.0f) ;
 			}
-			else if(mid_seconds>40)
+			else if(mid_seconds>28)
 			{
 				WBase=1300;
 			}

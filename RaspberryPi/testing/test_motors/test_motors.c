@@ -1,7 +1,7 @@
-#include "imuboard.h"
-#include "math.h"
+#include <math.h>
 #include "pwm.h"
-#include "stdlib.h"
+#include <stdlib.h>
+#include <stdio.h>
 
 float raw[24];
 float raw_before[24];
@@ -10,12 +10,7 @@ int total_counter=0;
 float yaw,pitch,roll;
 int discard_values=1000;
 
-//Yaw,Pitch and Roll
-float targets[3]={0,0,0};
-//Kpitch=3,Kroll=7, Kyaw=7
-//Kpitch=1,Kroll=1,Kyaw=0.0;
-float Kpitch=0.0,Kroll=0.0,Kyaw=0.0; 
-float errors[3];
+
 int omega[6];
 float WBase=1100;
 float WBase_1=1100;
@@ -34,22 +29,11 @@ int mid_seconds=0;
 
 int main(int argc, char **argv)
 {
-
-	FILE *log=NULL;
 	int end_profiler=0;
 	int i,j,motor_loop;
 	int time_steps;
 	int current_motor=0;
 	int sleep_steps=3*2;
-
-	if(IMUBInit()<0){
-		printf("Error with IMU appear\n");
-		exit(0);
-	}
-
-        IMUB_DLPF(0);
-	IMUBSampleRate(1);
-	IMUBAccelScale(16);
 
 
 	if(argc>=2)
@@ -68,7 +52,6 @@ int main(int argc, char **argv)
 	printf("Parameters: max_power=%i, time=%i\n",max_power,time);
 
 	time_steps=time*2;
-	log=fopen("IMU_log_profiler.txt","w");
 	
 	#ifdef MOTORS
 	//Setup PWM
@@ -84,22 +67,15 @@ int main(int argc, char **argv)
 
 	while(!end_profiler)
 	{
-		IMUBPollRaw(raw);
-		/*if(memcmp(raw,raw_before,sizeof(float)*10)!=0)
-		{
-			memcpy(raw_before,raw,sizeof(float)*10);
-		}else
-		{continue;}
-		*/
-
 
 		total_counter++;
+		
+		usleep(2000);
+
 
 		if(total_counter==250)
 		{
 			total_counter=0;
-
-			fflush(log);
 
 			mid_seconds++;
 
@@ -130,26 +106,12 @@ int main(int argc, char **argv)
 			printf(" Power: %f \n",WBase);
 		}
 
-			  //Yaw segment           Pitch		    Roll
-		omega[0]=  errors[0]*Kyaw    +   errors[1]*Kpitch                         + WBase;
-		omega[1]=  -errors[0]*Kyaw   +   errors[1]*Kpitch    + errors[2]*Kroll    + WBase;
-		omega[2]=  errors[0]*Kyaw    -   errors[1]*Kpitch    + errors[2]*Kroll    + WBase;
-		omega[3]= -errors[0]*Kyaw    -   errors[1]*Kpitch    			  + WBase;
-		omega[4]=  errors[0]*Kyaw    -   errors[1]*Kpitch    - errors[2]*Kroll 	  + WBase;
-		omega[5]= -errors[0]*Kyaw    +   errors[1]*Kpitch    - errors[2]*Kroll    + WBase;
-
-
-		fprintf(log,"%f, %f, %f",raw[3],raw[4],raw[5]);
-
 		#ifdef MOTORS
 		add_channel_pulse(channel, esc[current_motor], 0, WBase);
 		#endif	
-
-		fprintf(log,"\n");
-		
+	
 	}
 	
-	printf("Total counter: %i\n", total_counter);
 	
 	pwm_shutdown();
         exit(0);
