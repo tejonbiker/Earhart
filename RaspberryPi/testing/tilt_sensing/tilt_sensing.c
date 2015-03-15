@@ -59,8 +59,11 @@ unsigned int RefreshTimer()
 //monitor ctrl +c event to end properly the log
 void my_handler(int s){
 	printf("Exit...\n",s);
+
+	//Ends properly the file
 	fprintf(logIMU,"];");
 	fflush(logIMU);
+	fclose(logIMU);
 	exit(1);
 }
 
@@ -87,6 +90,7 @@ int main(int argc , char *argv[])
 	IMUBAccelScale(2);	//Setup the scale of accelerometer to 16G
 
 	//Open the log (file where the output of the IMU will be saved)
+	//Check if the user want a special name for the log
 	if(argc>=2)
 	{
 		logIMU=fopen(argv[1],"w");
@@ -102,7 +106,10 @@ int main(int argc , char *argv[])
 		logIMU=fopen("IMU_log.txt","w");
 	}
 
+	//populate the log correctly
 	fprintf(logIMU,"accel=[");
+
+	//Start sample loop
 	control_handler(NULL);
      
     return 0;
@@ -118,8 +125,34 @@ void *control_handler(void *socket_desc)
 
 	printf("Starting IMU...\n");
 
+
 	IMUB_DLPF(6);         //Go from 0 to 6, a more high value indicates a more low frecuency cut of the filter
+	/**
+   		Setup the Digital Low Pass Filter (aka DLFP), there are several levels in MPU6050:
+
+        	Level(value)    Bandwith(Hz)   Delay(ms)
+        	0               260             0
+        	1               184             2
+        	2               94              3
+        	3               44              4.9
+        	4               21              8.5
+        	5               10              13.8
+        	6               5               19
+        	7               Reserved
+
+        	See the datasheet for more info
+	*/
+
 	IMUBSampleRate(100);  //Go from 0 to 255, a more high value indicates a slow sample rate
+	/*
+		OutputRate=8 kHz (with DLPF=0)
+		OutputRate=1 kHz (with DLPF!=0)
+
+		Sample Rate = OutputRate/(1+ValueArg)
+
+	 Example, DLPF=6 and ValueArg=100
+		SampleRate=1k/(101)= 9.9 Samples per second aprox (take into account the polling method)
+	*/
 
 	//Start with an infinite loop	
     	while(1)
@@ -127,21 +160,28 @@ void *control_handler(void *socket_desc)
 		counter++;
 
 		 
+		/*Try to measure one second*/
 		lastTime=RefreshTimer();
 		if(lastTime - startTime >= 1000)
 		{
+			//Print a message every second (On Screen)
 		        printf("samples!: %i, time (ms): %u, ", counter,lastTime - startTime);
 			printf("Angle Roll: %f  \n",atan2(-raw[4],sqrt(raw[5]*raw[5] + raw[6]*raw[6])) );
 			startTime=lastTime;
 			counter=0;
 
 		}
+
+		//Ge data from the accelerometer
 		IMUBPollRaw(raw);
 
+		/*Print the data to the file (log), don't forget 
+		The MPUChip Have gyro+acclerometer, if you use
+		other index than 3,4 or 5 you will get wrong data
+		*/
 					//   X      Y      Z
 		fprintf(logIMU,"%f  %f  %f",raw[3],raw[4],raw[5]);
 		fprintf(logIMU,"\n");
-
 	}
 
     
